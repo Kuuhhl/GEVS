@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import InputField from "../components/form/inputField.jsx";
 import SelectField from "../components/form/selectField.jsx";
 import { QrScanner } from "@yudiel/react-qr-scanner";
@@ -14,34 +14,80 @@ function FormPage() {
 		uvc: { value: "", error: false },
 	});
 	const setFormValue = (field, value) => {
-		setForm((prevForm) => ({
-			...prevForm,
-			[field]: { ...prevForm[field], value, error: false },
-		}));
+		setForm((prevForm) => {
+			const updatedForm = {
+				...prevForm,
+				[field]: { ...prevForm[field], value, error: false },
+			};
+			return updatedForm;
+		});
 	};
+
 	const [scanning, setScanning] = useState(false);
-	const [qrReaderLoaded, setQrReaderLoaded] = useState(false);
+	const [qrScannerLoaded, setQrScannerLoaded] = useState(false);
+	const [decoded, setDecoded] = useState(false);
 	const [uvcUnlocked, setUvcUnlocked] = useState(false);
-
-	const validateForm = (checkUvc = false) => {
-		let formValid = true;
-		let formCopy = { ...form };
-
-		for (const key in formCopy) {
-			if (
-				(checkUvc &&
-					key === "uvc" &&
-					formCopy[key].value.length !== 8) ||
-				(!checkUvc && key !== "uvc" && formCopy[key].value === "")
-			) {
-				formCopy[key].error = true;
-				formValid = false;
+	// Check if QR Reader is loaded (for loading screen)
+	useEffect(() => {
+		const observer = new MutationObserver(() => {
+			// Check if QR Reader is loaded
+			const qrVideoElement = document.querySelector("video");
+			if (qrVideoElement) {
+				qrVideoElement.addEventListener("playing", () => {
+					setQrScannerLoaded(true);
+				});
 			}
-		}
+		});
 
-		setForm(formCopy);
-		return formValid;
-	};
+		// Start observing the document with the configured parameters
+		observer.observe(document, { childList: true, subtree: true });
+
+		// Ensure the observer is disconnected when the component unmounts
+		return () => observer.disconnect();
+	}, []);
+
+	// Dismount QR Reader when modal is closed via esc key
+	useEffect(() => {
+		const qrModal = document.getElementById("qrModal");
+		if (qrModal) {
+			const handleKeyDown = (event) => {
+				if (event.key === "Escape") {
+					setFormValue("uvc", "");
+					setScanning(false);
+					setQrScannerLoaded(false);
+				}
+			};
+
+			// Add event listener
+			qrModal.addEventListener("keydown", handleKeyDown);
+
+			// Remove event listener on cleanup
+			return () => qrModal.removeEventListener("keydown", handleKeyDown);
+		}
+	}, []);
+
+	const validateForm = useCallback(
+		(checkUvc = false) => {
+			let formValid = true;
+			let formCopy = { ...form };
+
+			for (const key in formCopy) {
+				if (
+					(checkUvc &&
+						key === "uvc" &&
+						formCopy[key].value.length !== 8) ||
+					(!checkUvc && key !== "uvc" && formCopy[key].value === "")
+				) {
+					formCopy[key].error = true;
+					formValid = false;
+				}
+			}
+
+			setForm(formCopy);
+			return formValid;
+		},
+		[form]
+	);
 
 	const submitStep1 = (event) => {
 		event.preventDefault();
@@ -56,25 +102,34 @@ function FormPage() {
 		const buttonId = event.nativeEvent.submitter.id;
 		if (buttonId === "scanQrButton") {
 			window.HSOverlay.open("#qrModal");
-			setQrReaderLoaded(false);
+			setQrScannerLoaded(false);
 			setScanning(true);
 		} else {
 			window.HSOverlay.open("#manualUvcModal");
 			setScanning(false);
-			setQrReaderLoaded(false);
+			setQrScannerLoaded(false);
 		}
 	};
-
-	const submitStep2 = () => {
+	const submitStep2 = useCallback(() => {
 		const formValid = validateForm(true);
 		if (!uvcUnlocked) return;
 		if (!formValid) {
+			console.log("Form invalid!");
+			console.log(JSON.stringify(form));
 			return;
 		}
 		window.HSOverlay.close("#manualUvcModal");
-		console.log("submitting " + JSON.stringify(form));
-	};
+		console.log("Form submitted!");
+		console.log(JSON.stringify(form));
+	}, [form, validateForm, uvcUnlocked]);
 
+	// Submit form when QR code is decoded
+	useEffect(() => {
+		if (decoded && form.uvc.value !== "") {
+			submitStep2();
+			setDecoded(false); // Reset the decoded state after submitting
+		}
+	}, [decoded, form.uvc.value, submitStep2]);
 	return (
 		<>
 			<main className="w-full max-w-md mx-auto p-6">
@@ -201,7 +256,8 @@ function FormPage() {
 			</main>
 			<div
 				id="qrModal"
-				className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto pointer-events-none"
+				className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto "
+				data-hs-overlay-keyboard="true"
 			>
 				<div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
 					<div className="w-full flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
@@ -213,6 +269,11 @@ function FormPage() {
 								type="button"
 								className="flex justify-center items-center w-7 h-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-gray-700 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
 								data-hs-overlay="#qrModal"
+								onClick={() => {
+									setFormValue("uvc", "");
+									setScanning(false);
+									setQrScannerLoaded(false);
+								}}
 							>
 								<span className="sr-only">Cancel</span>
 								<svg
@@ -237,12 +298,11 @@ function FormPage() {
 								<QrScanner
 									tracker={false}
 									onDecode={(result) => {
-										setQrReaderLoaded(true);
 										if (result) {
-											setFormValue("uvc", result?.text);
+											setFormValue("uvc", result);
 											window.HSOverlay.close("#qrModal");
 											setScanning(false);
-											submitStep2();
+											setDecoded(true);
 										}
 									}}
 									onError={(err) => {
@@ -257,16 +317,20 @@ function FormPage() {
 											`Error: ${err}. \nFalling back to manual input.`
 										);
 										setScanning(false);
-										setQrReaderLoaded(false);
+										setQrScannerLoaded(false);
 										window.HSOverlay.open(
 											"#manualUvcModal"
 										);
 									}}
+									containerStyle={
+										qrScannerLoaded
+											? {}
+											: { display: "none" }
+									}
 								/>
 							)}
-							{!qrReaderLoaded && scanning && (
+							{!qrScannerLoaded && scanning && (
 								<div className="min-h-[15rem] flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
-									(
 									<div className="flex flex-auto flex-col justify-center items-center p-4 md:p-5">
 										<div className="flex flex-col items-center justify-center gap-2">
 											<div
@@ -283,7 +347,6 @@ function FormPage() {
 											</span>
 										</div>
 									</div>
-									)
 								</div>
 							)}
 						</div>
@@ -293,8 +356,9 @@ function FormPage() {
 								className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
 								data-hs-overlay="#qrModal"
 								onClick={() => {
+									setFormValue("uvc", "");
 									setScanning(false);
-									setQrReaderLoaded(false);
+									setQrScannerLoaded(false);
 								}}
 							>
 								Cancel
@@ -303,96 +367,107 @@ function FormPage() {
 					</div>
 				</div>
 			</div>
-			<>
-				<div
-					id="manualUvcModal"
-					className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto pointer-events-none"
-				>
-					<div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
-						<div className="flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
-							<div className="flex justify-between items-center py-3 px-4 border-b dark:border-gray-700">
-								<h3 className="font-bold text-gray-800 dark:text-white">
-									Enter UVC Manually
-								</h3>
-								<button
-									type="button"
-									className="flex justify-center items-center w-7 h-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-gray-700 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-									data-hs-overlay="#manualUvcModal"
+			<div
+				id="manualUvcModal"
+				className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto pointer-events-none"
+			>
+				<div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
+					<div className="flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
+						<div className="flex justify-between items-center py-3 px-4 border-b dark:border-gray-700">
+							<h3 className="font-bold text-gray-800 dark:text-white">
+								Enter UVC Manually
+							</h3>
+							<button
+								type="button"
+								className="flex justify-center items-center w-7 h-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-gray-700 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								data-hs-overlay="#manualUvcModal"
+							>
+								<span className="sr-only">Cancel</span>
+								<svg
+									className="flex-shrink-0 w-4 h-4"
+									xmlns="http://www.w3.org/2000/svg"
+									width={24}
+									height={24}
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth={2}
+									strokeLinecap="round"
+									strokeLinejoin="round"
 								>
-									<span className="sr-only">Cancel</span>
-									<svg
-										className="flex-shrink-0 w-4 h-4"
-										xmlns="http://www.w3.org/2000/svg"
-										width={24}
-										height={24}
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth={2}
-										strokeLinecap="round"
-										strokeLinejoin="round"
-									>
-										<path d="M18 6 6 18" />
-										<path d="m6 6 12 12" />
-									</svg>
-								</button>
+									<path d="M18 6 6 18" />
+									<path d="m6 6 12 12" />
+								</svg>
+							</button>
+						</div>
+						<div className="p-4 overflow-y-auto relative">
+							<label
+								htmlFor="input-label"
+								className="block text-sm font-medium mb-2 dark:text-white"
+							>
+								UVC Code
+							</label>
+							<input
+								type="text"
+								id="input-label"
+								className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
+								placeholder="AB1FC20E"
+								autoFocus={true}
+								onChange={(e) => {
+									setFormValue("uvc", e.target.value);
+								}}
+							/>
+							<div
+								className={classNames(
+									"absolute inset-y-0 end-0 flex items-center pointer-events-none pe-3",
+									{ hidden: !form.uvc.error }
+								)}
+							>
+								<svg
+									className="h-5 w-5 text-red-500"
+									width={16}
+									height={16}
+									fill="currentColor"
+									viewBox="0 0 16 16"
+									aria-hidden="true"
+								>
+									<path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
+								</svg>
 							</div>
-							<div className="p-4 overflow-y-auto relative">
-								<label
-									htmlFor="input-label"
-									className="block text-sm font-medium mb-2 dark:text-white"
-								>
-									UVC Code
-								</label>
-								<input
-									type="text"
-									id="input-label"
-									className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400"
-									placeholder="AB1FC20E"
-									autoFocus={true}
-									onChange={(e) => {
-										setFormValue("uvc", e.target.value);
-									}}
-								/>
-								<div
-									className={classNames(
-										"absolute inset-y-0 end-0 flex items-center pointer-events-none pe-3",
-										{ hidden: !form.uvc.error }
-									)}
-								>
-									<svg
-										className="h-5 w-5 text-red-500"
-										width={16}
-										height={16}
-										fill="currentColor"
-										viewBox="0 0 16 16"
-										aria-hidden="true"
-									>
-										<path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z" />
-									</svg>
-								</div>
-							</div>
-							<div className="flex justify-end items-center gap-x-2 py-3 px-4 border-t dark:border-gray-700">
-								<button
-									type="button"
-									className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-									data-hs-overlay="#manualUvcModal"
-									onClick={() => setFormValue("uvc", "")}
-								>
-									Cancel
-								</button>
-								<button
-									type="button"
-									className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-									onClick={submitStep2}
-								>
-									Submit
-								</button>
-							</div>
+							<p
+								className={classNames(
+									"text-xs text-red-600 mt-2",
+									{
+										hidden: !form.uvc.error,
+									}
+								)}
+								id="uvc-error"
+							>
+								A UVC code is 8 characters long. Please provide
+								a valid UVC code.
+							</p>
+						</div>
+
+						<div className="flex justify-end items-center gap-x-2 py-3 px-4 border-t dark:border-gray-700">
+							<button
+								type="button"
+								className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								data-hs-overlay="#manualUvcModal"
+								onClick={() => setFormValue("uvc", "")}
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								onClick={submitStep2}
+							>
+								Submit
+							</button>
 						</div>
 					</div>
 				</div>
-			</>
+			</div>
 		</>
 	);
 }
