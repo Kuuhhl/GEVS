@@ -1,10 +1,11 @@
+import { Route, Routes } from "react-router-dom";
 import FormPage from "./pages/FormPage";
 
 function App() {
 	return (
-		<>
-			<FormPage />
-		</>
+		<Routes>
+			<Route path="/" element={<FormPage />} />
+		</Routes>
 	);
 }
 
