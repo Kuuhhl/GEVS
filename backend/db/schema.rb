@@ -10,8 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_28_144242) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_28_153821) do
+  create_table "admins", force: :cascade do |t|
+    t.string "email"
+    t.string "password"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "candidates", force: :cascade do |t|
+    t.string "name"
+    t.integer "party_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["party_id"], name: "index_candidates_on_party_id"
+  end
+
   create_table "constituencies", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "parties", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -34,4 +55,5 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_28_144242) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "candidates", "parties"
 end
