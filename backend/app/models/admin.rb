@@ -1,7 +1,5 @@
-class Admin < ApplicationRecord
+class Admin < User
   has_many :elections
-  validates :email, presence: { message: "can't be blank" }, format: { with: URI::MailTo::EMAIL_REGEXP, message: "is not a valid email" }
-  validates :password, presence: { message: "can't be blank" }
   validate :singleton_guard
 
   def singleton_guard

@@ -1,6 +1,6 @@
-class Voter < ApplicationRecord
+class Voter < User
   belongs_to :candidate, optional: true
-  validates_presence_of :full_name, :email, :date_of_birth, :unique_voter_code, :constituency
+  validates_presence_of :full_name, :email, :date_of_birth, :unique_voter_code, :constituency, :password
   validates_format_of :email, with: /\A[^@\s]+@([^@\s]+\.)+[^@\s]+\z/, message: "is not a valid email format"
   validates_uniqueness_of :email, message: "is already registered"
   validate :date_of_birth_format

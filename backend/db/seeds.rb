@@ -1,5 +1,7 @@
 # Initialize default admin
-Admin.find_or_create_by!(email: ENV["ADMIN_EMAIL"], password: ENV["ADMIN_PASSWORD"])
+Admin.find_or_create_by!(email: ENV["ADMIN_EMAIL"]) do |admin|
+  admin.password = ENV["ADMIN_PASSWORD"]
+end
 
 # Create new Election
 Election.first_or_create!

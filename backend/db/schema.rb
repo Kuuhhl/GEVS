@@ -13,7 +13,7 @@
 ActiveRecord::Schema[7.1].define(version: 2023_11_30_163831) do
   create_table "admins", force: :cascade do |t|
     t.string "email"
-    t.string "password"
+    t.string "password_digest"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
@@ -54,7 +54,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_163831) do
     t.string "email", null: false
     t.string "full_name", null: false
     t.string "date_of_birth", null: false
-    t.string "password"
+    t.string "password_digest"
     t.string "constituency", null: false
     t.string "unique_voter_code", null: false
     t.integer "candidate_id"

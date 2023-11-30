@@ -7,17 +7,17 @@ Rails.application.routes.draw do
   get "/gevs/parties" => "party#get_all_parties"
 
   # voter actions
-  # post '/voter/register' => 'voters#register'
-  # post '/voter/login' => 'voters#login'
+  post "/voter/register" => "voters#register"
+  post "/voter/login" => "voters#login"
   post "/voter/vote" => "voters#submit_vote"
   get "/voter/view_vote" => "voters#view_vote"
+  put "/voter/change_credentials" => "voters#change_credentials"
 
   # admin actions
-  # post '/admin/login' => 'admin#login'
-  # post '/admin/logout' => 'admin#logout'
+  post "/admin/login" => "admin#login"
+  put "/admin/change_credentials" => "admin#change_credentials"
   get "/admin/action/election/start" => "admin#start_election"
   get "/admin/action/election/end" => "admin#end_election"
-  # posts '/admin/change_credentials' => 'admin#change_credentials'
 
   # homepage / health page
   get "/homepage" => "homepage#index"
