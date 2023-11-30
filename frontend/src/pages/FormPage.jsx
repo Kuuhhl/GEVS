@@ -1,10 +1,12 @@
 import { useCallback, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import InputField from "../components/form/inputField.jsx";
 import SelectField from "../components/form/selectField.jsx";
 import { QrScanner } from "@yudiel/react-qr-scanner";
 import classNames from "classnames";
 
 function FormPage() {
+	const navigate = useNavigate();
 	const [form, setForm] = useState({
 		email: { value: "", error: false },
 		fullName: { value: "", error: false },
@@ -26,6 +28,7 @@ function FormPage() {
 	const [scanning, setScanning] = useState(false);
 	const [qrScannerLoaded, setQrScannerLoaded] = useState(false);
 	const [decoded, setDecoded] = useState(false);
+	const [errorMessage, setErrorMessage] = useState("");
 	const [uvcUnlocked, setUvcUnlocked] = useState(false);
 	// Check if QR Reader is loaded (for loading screen)
 	useEffect(() => {
@@ -111,18 +114,57 @@ function FormPage() {
 		}
 	};
 	const submitStep2 = useCallback(() => {
+		const getFormValues = () => {
+			let formValues = {};
+			for (let key in form) {
+				formValues[key] = form[key].value;
+			}
+			return formValues;
+		};
+
 		const formValid = validateForm(true);
 		if (!uvcUnlocked) return;
 		if (!formValid) {
 			console.log("Form invalid!");
-			console.log(JSON.stringify(form));
 			return;
 		}
-		window.HSOverlay.close("#manualUvcModal");
-		console.log("Form submitted!");
-		console.log(JSON.stringify(form));
-	}, [form, validateForm, uvcUnlocked]);
 
+		fetch("http://localhost:3001/voter/register", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(getFormValues()),
+		})
+			.then((response) => response.json())
+			.then((data) => {
+				if (Object.prototype.hasOwnProperty.call(data, "token")) {
+					// set auth jwt cookie
+					document.cookie = `token=${data.token}; path=/`;
+
+					// redirect to voting page
+					navigate("/vote");
+					return;
+				}
+
+				// show error message
+				if (Object.prototype.hasOwnProperty.call(data, "error")) {
+					setErrorMessage(data.error.join(", "));
+				} else {
+					setErrorMessage(
+						"An error occurred while sending the request."
+					);
+				}
+				window.HSOverlay.open("#errorPopupModal");
+			})
+			.catch(() => {
+				setErrorMessage("An error occurred while sending the request.");
+
+				window.HSOverlay.open("#errorPopupModal");
+			});
+
+		window.HSOverlay.close("#manualUvcModal");
+	}, [form, validateForm, uvcUnlocked, navigate]);
 	// Submit form when QR code is decoded
 	useEffect(() => {
 		if (decoded && form.uvc.value !== "") {
@@ -254,6 +296,57 @@ function FormPage() {
 					</div>
 				</div>
 			</main>
+			{/* Error Modal */}
+			<div
+				id="errorPopupModal"
+				className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto"
+			>
+				<div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
+					<div className="w-full flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
+						<div className="flex justify-between items-center py-3 px-4 border-b dark:border-gray-700">
+							<h3 className="font-bold text-gray-800 dark:text-white">
+								Error
+							</h3>
+							<button
+								type="button"
+								className="flex justify-center items-center w-7 h-7 text-sm font-semibold rounded-full border border-transparent text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-gray-700 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								data-hs-overlay="#errorPopupModal"
+							>
+								<span className="sr-only">Close</span>
+								<svg
+									className="flex-shrink-0 w-4 h-4"
+									xmlns="http://www.w3.org/2000/svg"
+									width={24}
+									height={24}
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth={2}
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								>
+									<path d="M18 6 6 18" />
+									<path d="m6 6 12 12" />
+								</svg>
+							</button>
+						</div>
+						<div className="p-4 overflow-y-auto">
+							<p className="text-gray-800 dark:text-gray-400">
+								{errorMessage}
+							</p>
+						</div>
+						<div className="flex justify-end items-center gap-x-2 py-3 px-4 border-t dark:border-gray-700">
+							<button
+								type="button"
+								className="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-white dark:hover:bg-gray-800 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								data-hs-overlay="#errorPopupModal"
+							>
+								Okay
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
 			<div
 				id="qrModal"
 				className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto "

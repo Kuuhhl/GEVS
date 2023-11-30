@@ -2,7 +2,15 @@ class VotersController < ApplicationController
   before_action :authenticate, only: [:view_vote, :change_credentials]
 
   def register
-    voter = Voter.new(voter_params)
+    puts voter_params
+    voter = Voter.new(
+      email: voter_params[:email],
+      full_name: voter_params[:fullName],
+      date_of_birth: voter_params[:dateOfBirth],
+      password: voter_params[:password],
+      constituency: voter_params[:constituency],
+      unique_voter_code: voter_params[:uvc],
+    )
 
     if voter.save
       token = JsonWebToken.encode(user_id: voter.id)
@@ -10,6 +18,8 @@ class VotersController < ApplicationController
     else
       render json: { error: voter.errors.full_messages }, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotUnique
+    render json: { error: "Unique voter code already exists" }, status: :unprocessable_entity
   end
 
   def login
@@ -57,7 +67,7 @@ class VotersController < ApplicationController
   private
 
   def voter_params
-    params.require(:voter).permit(:email, :full_name, :date_of_birth, :password, :constituency, :unique_voter_code)
+    params.permit(:email, :fullName, :dateOfBirth, :password, :constituency, :uvc)
   end
 
   def authenticate
