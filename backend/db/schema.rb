@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2023_11_28_153821) do
+ActiveRecord::Schema[7.1].define(version: 2023_11_30_163831) do
   create_table "admins", force: :cascade do |t|
     t.string "email"
     t.string "password"
@@ -32,6 +32,12 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_28_153821) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "elections", force: :cascade do |t|
+    t.string "status", default: "Not Started"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "parties", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -45,15 +51,20 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_28_153821) do
   end
 
   create_table "voters", force: :cascade do |t|
-    t.string "email"
-    t.string "full_name"
-    t.string "date_of_birth"
+    t.string "email", null: false
+    t.string "full_name", null: false
+    t.string "date_of_birth", null: false
     t.string "password"
-    t.string "constituency"
-    t.string "unique_voter_code"
+    t.string "constituency", null: false
+    t.string "unique_voter_code", null: false
+    t.integer "candidate_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["candidate_id"], name: "index_voters_on_candidate_id"
+    t.index ["email"], name: "index_voters_on_email", unique: true
+    t.index ["unique_voter_code"], name: "index_voters_on_unique_voter_code", unique: true
   end
 
   add_foreign_key "candidates", "parties"
+  add_foreign_key "voters", "candidates"
 end
