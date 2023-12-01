@@ -1,11 +1,12 @@
 import { useCallback, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
+import { Link, useNavigate } from "react-router-dom";
 import InputField from "../components/form/inputField.jsx";
 import SelectField from "../components/form/selectField.jsx";
 import { QrScanner } from "@yudiel/react-qr-scanner";
 import classNames from "classnames";
 
-function FormPage() {
+function Register() {
 	const navigate = useNavigate();
 	const [form, setForm] = useState({
 		email: { value: "", error: false },
@@ -140,7 +141,7 @@ function FormPage() {
 			.then((data) => {
 				if (Object.prototype.hasOwnProperty.call(data, "token")) {
 					// set auth jwt cookie
-					document.cookie = `token=${data.token}; path=/`;
+					Cookies.set("voter_token", data.token);
 
 					// redirect to voting page
 					navigate("/vote");
@@ -177,6 +178,20 @@ function FormPage() {
 			<main className="w-full max-w-md mx-auto p-6">
 				<div className="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
 					<div className="p-4 sm:p-7">
+						<div className="text-center">
+							<h1 className="block text-2xl font-bold text-gray-800 dark:text-white">
+								Sign up
+							</h1>
+							<p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex flex-col">
+								Registered already?
+								<Link
+									className="text-blue-600 decoration-2 hover:underline font-medium dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+									to="/login"
+								>
+									Sign in here
+								</Link>
+							</p>
+						</div>
 						<div className="mt-5">
 							<form onSubmit={submitStep1}>
 								<div className="grid gap-y-4">
@@ -565,4 +580,4 @@ function FormPage() {
 	);
 }
 
-export default FormPage;
+export default Register;

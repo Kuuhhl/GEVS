@@ -1,8 +1,7 @@
 class VotersController < ApplicationController
-  before_action :authenticate, only: [:view_vote, :change_credentials]
+  before_action :authenticate, only: [:view_vote, :change_credentials, :submit_vote]
 
   def register
-    puts voter_params
     voter = Voter.new(
       email: voter_params[:email],
       full_name: voter_params[:fullName],
@@ -30,6 +29,19 @@ class VotersController < ApplicationController
       render json: { token: token }
     else
       render json: { error: "Invalid credentials" }, status: :unauthorized
+    end
+  end
+
+  def verify_token
+    header = request.headers["Authorization"]
+    token = header.split(" ").last if header.present?
+
+    begin
+      decoded = JsonWebToken.decode(token)
+      voter = Voter.find(decoded[:user_id])
+      render json: { message: "Valid token" }, status: :ok
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Invalid token" }, status: :unauthorized
     end
   end
 
@@ -61,6 +73,24 @@ class VotersController < ApplicationController
       end
     else
       render json: { error: "Invalid current password" }, status: :unauthorized
+    end
+  end
+
+  def submit_vote
+    if @voter.id == params[:id].to_i
+      if @voter.candidate_id.nil?
+        candidate = Candidate.find_by(id: params[:candidate_id])
+        if candidate.present?
+          @voter.submit_vote(candidate.id)
+          render json: { message: "Vote casted successfully" }, status: :ok
+        else
+          render json: { error: "Candidate does not exist" }, status: :not_found
+        end
+      else
+        render json: { error: "Vote already casted" }, status: :bad_request
+      end
+    else
+      render json: { error: "Unauthorized" }, status: :unauthorized
     end
   end
 

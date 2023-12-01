@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@yudiel/react-qr-scanner": "^1.2.3",
+    "chart.js": "^4.4.0",
     "classnames": "^2.3.2",
+    "js-cookie": "^3.0.5",
     "preline": "^2.0.0",
     "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0"
   },
