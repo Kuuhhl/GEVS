@@ -1,9 +1,10 @@
+import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import VoteTable from "../components/form/VoteTable";
+import CandidatesTable from "../components/form/CandidatesTable";
 
-export default function Vote() {
+export default function CandidatesList({ vote = false }) {
 	const navigate = useNavigate();
 	const [authenticated, setAuthenticated] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
@@ -15,6 +16,7 @@ export default function Vote() {
 	// check if user is authenticated and
 	// direct to login page if not
 	useEffect(() => {
+		if (!vote) return;
 		if (!voter_token) {
 			navigate("/login");
 			return;
@@ -38,26 +40,24 @@ export default function Vote() {
 			.catch(() => {
 				navigate("/login");
 			});
-	}, [navigate, voter_token]);
+	}, [navigate, voter_token, vote]);
 
 	// fetch candidates from server
 	useEffect(() => {
-		if (authenticated) {
-			fetch("http://localhost:3001/gevs/candidates", {
-				method: "GET",
-				headers: {
-					"Content-Type": "application/json",
-				},
+		fetch("http://localhost:3001/gevs/candidates", {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		})
+			.then((response) => response.json())
+			.then((data) => {
+				setParties(data);
 			})
-				.then((response) => response.json())
-				.then((data) => {
-					setParties(data);
-				})
-				.catch(() => {
-					setErrorMessage("Error: Could not fetch candidates.");
-				});
-		}
-	}, [authenticated]);
+			.catch(() => {
+				setErrorMessage("Error: Could not fetch candidates.");
+			});
+	}, []);
 
 	useEffect(() => {
 		if (authenticated && votedCandidate.id) {
@@ -74,7 +74,7 @@ export default function Vote() {
 					if (Object.prototype.hasOwnProperty.call(data, "error")) {
 						setErrorMessage("Error: " + ", ".join(data.error));
 					} else {
-						navigate("/voter/dashboard");
+						navigate("/");
 					}
 				})
 				.catch(() => {
@@ -87,27 +87,29 @@ export default function Vote() {
 		return <div>{errorMessage}</div>;
 	}
 	return (
-		authenticated && (
-			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 dark:bg-gray-800">
-				{Object.entries(parties).map(([party, candidates]) => (
-					<div
-						key={party}
-						className="bg-white p-6 rounded-md shadow-md dark:bg-gray-700"
-					>
-						<div>
-							<h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-								{party}
-							</h2>
-						</div>
-						<div className="mt-8 space-y-6">
-							<VoteTable
-								candidates={candidates}
-								setVotedCandidate={setVotedCandidate}
-							/>
-						</div>
+		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 dark:bg-gray-800">
+			{Object.entries(parties).map(([party, candidates]) => (
+				<div
+					key={party}
+					className="bg-white p-6 rounded-md shadow-md dark:bg-gray-700"
+				>
+					<div>
+						<h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+							{party}
+						</h2>
 					</div>
-				))}
-			</div>
-		)
+					<div className="mt-8 space-y-6">
+						<CandidatesTable
+							candidates={candidates}
+							setVotedCandidate={setVotedCandidate}
+							showVoteButton={vote}
+						/>
+					</div>
+				</div>
+			))}
+		</div>
 	);
 }
+CandidatesList.propTypes = {
+	vote: PropTypes.bool,
+};

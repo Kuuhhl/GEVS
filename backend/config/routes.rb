@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   put "/admin/change_credentials" => "admin#change_credentials"
   put "/admin/action/election/start" => "admin#start_election"
   put "/admin/action/election/end" => "admin#end_election"
+  put "/admin/action/election/reset" => "admin#reset_election"
 
   # homepage / health page
   get "/homepage" => "homepage#index"

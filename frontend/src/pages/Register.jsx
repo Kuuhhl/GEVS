@@ -1,12 +1,15 @@
 import { useCallback, useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import Cookies from "js-cookie";
 import { Link, useNavigate } from "react-router-dom";
 import InputField from "../components/form/inputField.jsx";
 import SelectField from "../components/form/selectField.jsx";
 import { QrScanner } from "@yudiel/react-qr-scanner";
 import classNames from "classnames";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faQrcode } from "@fortawesome/free-solid-svg-icons";
 
-function Register() {
+function Register({ setLoginState }) {
 	const navigate = useNavigate();
 	const [form, setForm] = useState({
 		email: { value: "", error: false },
@@ -31,6 +34,7 @@ function Register() {
 	const [decoded, setDecoded] = useState(false);
 	const [errorMessage, setErrorMessage] = useState("");
 	const [uvcUnlocked, setUvcUnlocked] = useState(false);
+
 	// Check if QR Reader is loaded (for loading screen)
 	useEffect(() => {
 		const observer = new MutationObserver(() => {
@@ -140,8 +144,18 @@ function Register() {
 			.then((response) => response.json())
 			.then((data) => {
 				if (Object.prototype.hasOwnProperty.call(data, "token")) {
+					// delete old auth jwt cookies
+					Cookies.remove("voter_token");
+					Cookies.remove("admin_token");
+
 					// set auth jwt cookie
 					Cookies.set("voter_token", data.token);
+
+					// set login state
+					setLoginState((prevState) => ({
+						...prevState,
+						voter: true,
+					}));
 
 					// redirect to voting page
 					navigate("/vote");
@@ -176,138 +190,138 @@ function Register() {
 	return (
 		<>
 			<main className="w-full max-w-md mx-auto p-6">
-				<div className="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
-					<div className="p-4 sm:p-7">
-						<div className="text-center">
-							<h1 className="block text-2xl font-bold text-gray-800 dark:text-white">
-								Sign up
-							</h1>
-							<p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex flex-col">
-								Registered already?
-								<Link
-									className="text-blue-600 decoration-2 hover:underline font-medium dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-									to="/login"
-								>
-									Sign in here
-								</Link>
-							</p>
-						</div>
-						<div className="mt-5">
-							<form onSubmit={submitStep1}>
-								<div className="grid gap-y-4">
-									<InputField
-										labelText="Email"
-										inputType="text"
-										inputId="email"
-										inputName="email"
-										isRequired={true}
-										setFormValue={(value) =>
-											setFormValue("email", value)
-										}
-										showError={form.email.error}
-										errorMessage="Please include a valid email address so we can get back to you."
-										svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
-									/>
-									<InputField
-										labelText="Full Name"
-										inputType="text"
-										inputId="fullName"
-										inputName="fullName"
-										isRequired={true}
-										setFormValue={(value) =>
-											setFormValue("fullName", value)
-										}
-										showError={form.fullName.error}
-										errorMessage="Please provide a valid full name."
-										svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
-									/>
-									<InputField
-										labelText="Date of Birth"
-										inputType="date"
-										inputId="dateOfBirth"
-										inputName="dateOfBirth"
-										isRequired={true}
-										setFormValue={(value) => {
-											setFormValue("dateOfBirth", value);
-										}}
-										showError={form.dateOfBirth.error}
-										errorMessage="Please provide a valid date of birth."
-										svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
-									/>
+				<div className="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-700 dark:border-gray-600 p-4">
+					<div className="p-3">
+						<div className="text-center"></div>
+						<h1 className="block text-2xl font-bold text-gray-800 dark:text-white text-center">
+							Register as a new Voter
+						</h1>
+						<p className="mt-1 text-sm text-gray-600 dark:text-gray-400 flex flex-col text-center">
+							Registered already?
+							<Link
+								className="text-blue-600 decoration-2 hover:underline font-medium dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								to="/login"
+							>
+								Sign in here
+							</Link>
+						</p>
+					</div>
+					<div className="mt-5">
+						<form onSubmit={submitStep1}>
+							<div className="grid gap-y-4">
+								<InputField
+									labelText="Email"
+									inputType="text"
+									inputId="email"
+									inputName="email"
+									isRequired={true}
+									setFormValue={(value) =>
+										setFormValue("email", value)
+									}
+									showError={form.email.error}
+									errorMessage="Please include a valid email address."
+									svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
+								/>
+								<InputField
+									labelText="Full Name"
+									inputType="text"
+									inputId="fullName"
+									inputName="fullName"
+									isRequired={true}
+									setFormValue={(value) =>
+										setFormValue("fullName", value)
+									}
+									showError={form.fullName.error}
+									errorMessage="Please provide a valid full name."
+									svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
+								/>
+								<InputField
+									labelText="Date of Birth"
+									inputType="date"
+									inputId="dateOfBirth"
+									inputName="dateOfBirth"
+									isRequired={true}
+									setFormValue={(value) => {
+										setFormValue("dateOfBirth", value);
+									}}
+									showError={form.dateOfBirth.error}
+									errorMessage="Please provide a valid date of birth."
+									svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
+								/>
 
-									<SelectField
-										labelText="Constituency"
-										selectorId={"constituency"}
-										selectorName={"constituency"}
-										selectorValues={[
-											{
-												value: "",
-												label: "Select Constituency",
-											},
-											{
-												value: "Shangri-la-Town",
-												label: "Shangri-la-Town",
-											},
-											{
-												value: "Northern-Kunlun-Mountain",
-												label: "Northern-Kunlun-Mountain",
-											},
-											{
-												value: "Western-Shangri-la",
-												label: "Western-Shangri-la",
-											},
-											{
-												value: "Naboo-Vallery",
-												label: "Naboo-Vallery",
-											},
-											{
-												value: "New-Felucia",
-												label: "New-Felucia",
-											},
-										]}
-										isRequired={true}
-										setFormValue={(value) =>
-											setFormValue("constituency", value)
-										}
-										showError={form.constituency.error}
-										errorMessage="Please provide a valid constituency."
-										svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
-									/>
-									<InputField
-										labelText="Password"
-										inputType="password"
-										inputId="password"
-										inputName="password"
-										isRequired={true}
-										setFormValue={(value) =>
-											setFormValue("password", value)
-										}
-										showError={form.password.error}
-										errorMessage="Please provide a valid password."
-										svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
-									/>
-									<button
-										id="scanQrButton"
-										type="submit"
-										className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-									>
-										{/* <Qr className="w-5 h-5" /> */}
-										Scan UVC QR-Code
-									</button>
-									<div className="py-3 flex items-center text-xs text-gray-400 uppercase before:flex-[1_1_0%] before:border-t before:border-gray-200 before:me-6 after:flex-[1_1_0%] after:border-t after:border-gray-200 after:ms-6 dark:text-gray-500 dark:before:border-gray-600 dark:after:border-gray-600">
-										Or
-									</div>
-									<div className="flex justify-center items-center">
-										<button
-											type="submit"
-											className="text-sm text-blue-600 decoration-2 hover:underline font-medium dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600 cursor-pointer"
-										>
-											Enter UVC Manually
-										</button>
-									</div>
+								<SelectField
+									labelText="Constituency"
+									selectorId={"constituency"}
+									selectorName={"constituency"}
+									selectorValues={[
+										{
+											value: "",
+											label: "Select Constituency",
+										},
+										{
+											value: "Shangri-la-Town",
+											label: "Shangri-la-Town",
+										},
+										{
+											value: "Northern-Kunlun-Mountain",
+											label: "Northern-Kunlun-Mountain",
+										},
+										{
+											value: "Western-Shangri-la",
+											label: "Western-Shangri-la",
+										},
+										{
+											value: "Naboo-Vallery",
+											label: "Naboo-Vallery",
+										},
+										{
+											value: "New-Felucia",
+											label: "New-Felucia",
+										},
+									]}
+									isRequired={true}
+									setFormValue={(value) =>
+										setFormValue("constituency", value)
+									}
+									showError={form.constituency.error}
+									errorMessage="Please provide a valid constituency."
+									svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
+								/>
+								<InputField
+									labelText="Password"
+									inputType="password"
+									inputId="password"
+									inputName="password"
+									isRequired={true}
+									setFormValue={(value) =>
+										setFormValue("password", value)
+									}
+									showError={form.password.error}
+									errorMessage="Please provide a valid password."
+									svgPath="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"
+								/>
+
+								<button
+									id="scanQrButton"
+									type="submit"
+									className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								>
+									<FontAwesomeIcon icon={faQrcode} />
+									Scan UVC QR-Code
+								</button>
+								<div className="py-3 flex items-center text-xs text-gray-400 uppercase before:flex-[1_1_0%] before:border-t before:border-gray-200 before:me-6 after:flex-[1_1_0%] after:border-t after:border-gray-200 after:ms-6 dark:text-gray-500 dark:before:border-gray-600 dark:after:border-gray-600">
+									Or
 								</div>
-							</form>
-						</div>
+								<div className="flex justify-center items-center">
+									<button
+										type="submit"
+										className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-gray-200 text-gray-500 hover:border-blue-600 hover:text-blue-600 disabled:opacity-50 disabled:pointer-events-none dark:border-gray-600 dark:text-gray-400 dark:hover:text-blue-500 dark:hover:border-blue-600 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+									>
+										Enter UVC Manually
+									</button>
+								</div>
+							</div>
+						</form>
 					</div>
 				</div>
 			</main>
@@ -317,7 +331,7 @@ function Register() {
 				className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto"
 			>
 				<div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
-					<div className="w-full flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
+					<div className="w-full flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:shadow-slate-700/[.7]">
 						<div className="flex justify-between items-center py-3 px-4 border-b dark:border-gray-700">
 							<h3 className="font-bold text-gray-800 dark:text-white">
 								Error
@@ -368,7 +382,7 @@ function Register() {
 				data-hs-overlay-keyboard="true"
 			>
 				<div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto min-h-[calc(100%-3.5rem)] flex items-center">
-					<div className="w-full flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
+					<div className="w-full flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:shadow-slate-700/[.7]">
 						<div className="flex justify-between items-center py-3 px-4 border-b dark:border-gray-700">
 							<h3 className="font-bold text-gray-800 dark:text-white">
 								Scanning UVC QR-Code
@@ -438,7 +452,7 @@ function Register() {
 								/>
 							)}
 							{!qrScannerLoaded && scanning && (
-								<div className="min-h-[15rem] flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
+								<div className="min-h-[15rem] flex flex-col bg-white border shadow-sm rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:shadow-slate-700/[.7]">
 									<div className="flex flex-auto flex-col justify-center items-center p-4 md:p-5">
 										<div className="flex flex-col items-center justify-center gap-2">
 											<div
@@ -480,7 +494,7 @@ function Register() {
 				className="hs-overlay hidden w-full h-full fixed top-0 start-0 z-[60] overflow-x-hidden overflow-y-auto pointer-events-none"
 			>
 				<div className="hs-overlay-open:mt-7 hs-overlay-open:opacity-100 hs-overlay-open:duration-500 mt-0 opacity-0 ease-out transition-all sm:max-w-lg sm:w-full m-3 sm:mx-auto">
-					<div className="flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-gray-800 dark:border-gray-700 dark:shadow-slate-700/[.7]">
+					<div className="flex flex-col bg-white border shadow-sm rounded-xl pointer-events-auto dark:bg-gray-700 dark:border-gray-600 dark:shadow-slate-700/[.7]">
 						<div className="flex justify-between items-center py-3 px-4 border-b dark:border-gray-700">
 							<h3 className="font-bold text-gray-800 dark:text-white">
 								Enter UVC Manually
@@ -581,3 +595,7 @@ function Register() {
 }
 
 export default Register;
+
+Register.propTypes = {
+	setLoginState: PropTypes.func.isRequired,
+};

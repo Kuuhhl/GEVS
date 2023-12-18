@@ -1,8 +1,11 @@
+import PropTypes from "prop-types";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import classNames from "classnames";
 import Cookies from "js-cookie";
 import { useState, useEffect } from "react";
-export default function Login({ isAdmin = false }) {
+export default function Login({ isAdmin = false, setLoginState }) {
+	const navigate = useNavigate();
 	const [email, setEmail] = useState(
 		localStorage.getItem(isAdmin ? "admin_email" : "email") || ""
 	);
@@ -17,9 +20,9 @@ export default function Login({ isAdmin = false }) {
 
 	useEffect(() => {
 		if (rememberEmail) {
-			localStorage.setItem(isAdmin ? "admin_email" : "email", email);
+			Cookies.set(isAdmin ? "admin_email" : "email", email);
 		} else {
-			localStorage.removeItem(isAdmin ? "admin_email" : "email");
+			Cookies.remove(isAdmin ? "admin_email" : "email");
 		}
 	}, [email, rememberEmail, isAdmin]);
 
@@ -53,16 +56,26 @@ export default function Login({ isAdmin = false }) {
 				.then((response) => response.json())
 				.then((data) => {
 					if (Object.prototype.hasOwnProperty.call(data, "token")) {
+						// remove all cookies
+						Cookies.remove("admin_token");
+						Cookies.remove("voter_token");
+
 						if (isAdmin) {
 							Cookies.set("admin_token", data.token);
 							Cookies.set("admin_email", email);
+							setLoginState((prevState) => ({
+								...prevState,
+								admin: true,
+							}));
 						} else {
 							Cookies.set("voter_token", data.token);
 							Cookies.set("email", email);
+							setLoginState((prevState) => ({
+								...prevState,
+								voter: true,
+							}));
 						}
-						window.location.href = isAdmin
-							? "/admin/dashboard"
-							: "/voter/dashboard";
+						navigate("/");
 					} else {
 						setErrorMessage(
 							"Error: " +
@@ -83,21 +96,23 @@ export default function Login({ isAdmin = false }) {
 	return (
 		<>
 			<main className="w-full max-w-md mx-auto p-6">
-				<div className="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-800 dark:border-gray-700">
+				<div className="mt-7 bg-white border border-gray-200 rounded-xl shadow-sm dark:bg-gray-700 dark:border-gray-600">
 					<div className="p-4 sm:p-7">
 						<div className="text-center">
 							<h1 className="block text-2xl font-bold text-gray-800 dark:text-white">
-								Sign in
+								Sign in as {isAdmin ? "Admin" : "Voter"}
 							</h1>
-							<p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex flex-col">
-								Don't have an account yet?
-								<Link
-									className="text-blue-600 decoration-2 hover:underline font-medium dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-									to="/register"
-								>
-									Sign up here
-								</Link>
-							</p>
+							{!isAdmin && (
+								<p className="mt-2 text-sm text-gray-600 dark:text-gray-400 flex flex-col">
+									Don't have an account yet?
+									<Link
+										className="text-blue-600 decoration-2 hover:underline font-medium dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+										to="/register"
+									>
+										Sign up here
+									</Link>
+								</p>
+							)}
 						</div>
 						<div className="mt-5">
 							{/* Form */}
@@ -128,7 +143,6 @@ export default function Login({ isAdmin = false }) {
 												onChange={(e) =>
 													setEmail(e.target.value)
 												}
-												pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 												required
 												aria-describedby="email-error"
 											/>
@@ -308,3 +322,7 @@ export default function Login({ isAdmin = false }) {
 		</>
 	);
 }
+Login.propTypes = {
+	isAdmin: PropTypes.bool,
+	setLoginState: PropTypes.func.isRequired,
+};

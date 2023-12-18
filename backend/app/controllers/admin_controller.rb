@@ -51,6 +51,17 @@ class AdminController < ApplicationController
     end
   end
 
+  def reset_election
+    election = Election.last
+    if election.present? && election.status == "Completed"
+      election.update(status: "Not Started")
+      Voter.destroy_all
+      render json: { status: election.status }, status: :ok
+    else
+      render json: { error: "No completed election" }, status: :not_found
+    end
+  end
+
   private
 
   def admin_params
