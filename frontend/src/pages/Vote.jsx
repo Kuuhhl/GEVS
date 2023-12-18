@@ -10,11 +10,11 @@ export default function Vote() {
 	const [votedCandidate, setVotedCandidate] = useState({});
 	const [parties, setParties] = useState({});
 
+	const voter_token = Cookies.get("voter_token");
+
 	// check if user is authenticated and
 	// direct to login page if not
 	useEffect(() => {
-		const voter_token = Cookies.get("voter_token");
-
 		if (!voter_token) {
 			navigate("/login");
 			return;
@@ -29,7 +29,7 @@ export default function Vote() {
 		})
 			.then((response) => response.json())
 			.then((data) => {
-				if (data.authenticated) {
+				if (data.message.toLowerCase().includes("valid")) {
 					setAuthenticated(true);
 				} else {
 					navigate("/login");
@@ -38,7 +38,7 @@ export default function Vote() {
 			.catch(() => {
 				navigate("/login");
 			});
-	}, [navigate]);
+	}, [navigate, voter_token]);
 
 	// fetch candidates from server
 	useEffect(() => {
@@ -51,7 +51,6 @@ export default function Vote() {
 			})
 				.then((response) => response.json())
 				.then((data) => {
-					console.log(data);
 					setParties(data);
 				})
 				.catch(() => {
@@ -62,48 +61,49 @@ export default function Vote() {
 
 	useEffect(() => {
 		if (authenticated && votedCandidate.id) {
-			const voter_token = Cookies.get("token");
-			fetch("http://localhost:3001/voter/vote"),
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: "Bearer " + voter_token,
-					},
-					body: JSON.stringify({ id: votedCandidate.id }),
-				}
-					.then((response) => response.json())
-					.then((data) => {
-						if (
-							Object.prototype.hasOwnProperty.call(data, "error")
-						) {
-							setErrorMessage("Error: " + ", ".join(data.error));
-						} else {
-							navigate("/dashboard");
-						}
-					})
-					.catch(() => {
-						setErrorMessage("Error: Could not cast vote.");
-					});
+			fetch("http://localhost:3001/voter/vote", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${voter_token}`,
+				},
+				body: JSON.stringify({ candidate_id: votedCandidate.id }),
+			})
+				.then((response) => response.json())
+				.then((data) => {
+					if (Object.prototype.hasOwnProperty.call(data, "error")) {
+						setErrorMessage("Error: " + ", ".join(data.error));
+					} else {
+						navigate("/voter/dashboard");
+					}
+				})
+				.catch(() => {
+					setErrorMessage("Error: Could not cast vote.");
+				});
 		}
-	}, [authenticated, navigate, votedCandidate]);
+	}, [authenticated, navigate, votedCandidate, voter_token]);
 
 	if (errorMessage) {
 		return <div>{errorMessage}</div>;
 	}
 	return (
 		authenticated && (
-			<div className="flex flex-col">
+			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 dark:bg-gray-800">
 				{Object.entries(parties).map(([party, candidates]) => (
-					<div key={party} className="-m-1.5 overflow-x-auto">
-						<h2>{party}</h2>
-						<div className="p-1.5 min-w-full inline-block align-middle">
-							<div className="overflow-hidden">
-								<VoteTable
-									candidates={candidates}
-									setVotedCandidate={setVotedCandidate}
-								/>
-							</div>
+					<div
+						key={party}
+						className="bg-white p-6 rounded-md shadow-md dark:bg-gray-700"
+					>
+						<div>
+							<h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+								{party}
+							</h2>
+						</div>
+						<div className="mt-8 space-y-6">
+							<VoteTable
+								candidates={candidates}
+								setVotedCandidate={setVotedCandidate}
+							/>
 						</div>
 					</div>
 				))}

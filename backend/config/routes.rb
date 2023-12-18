@@ -9,7 +9,7 @@ Rails.application.routes.draw do
   # voter actions
   post "/voter/register" => "voters#register"
   post "/voter/login" => "voters#login"
-  post "/voter/verify_token" => "voters#verify_token"
+  post "/voter/verify-token" => "voters#verify_token"
   post "/voter/vote" => "voters#submit_vote"
   get "/voter/view_vote" => "voters#view_vote"
   put "/voter/change_credentials" => "voters#change_credentials"

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import classNames from "classnames";
 import Cookies from "js-cookie";
 import { useState, useEffect } from "react";
 export default function Login({ isAdmin = false }) {
@@ -7,6 +8,9 @@ export default function Login({ isAdmin = false }) {
 	);
 	const [password, setPassword] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
+	const [emailError, setEmailError] = useState(false);
+	const [passwordError, setPasswordError] = useState(false);
+
 	const [rememberEmail, setRememberEmail] = useState(
 		!!localStorage.getItem(isAdmin ? "admin_email" : "email")
 	);
@@ -21,48 +25,59 @@ export default function Login({ isAdmin = false }) {
 
 	const handleFormSubmit = (e) => {
 		e.preventDefault();
-		const data = { email, password };
-		const url = isAdmin
-			? "http://localhost:3001/admin/login"
-			: "http://localhost:3001/voter/login";
+		// Validate email and password
+		const emailIsValid = email.match(
+			/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+		);
+		const passwordIsValid = password.length >= 1;
 
-		fetch(url, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: isAdmin
-					? `Bearer ${Cookies.get("admin_token")}`
-					: `Bearer ${Cookies.get("voter_token")}`,
-			},
-			body: JSON.stringify(data),
-		})
-			.then((response) => response.json())
-			.then((data) => {
-				if (Object.prototype.hasOwnProperty.call(data, "token")) {
-					if (isAdmin) {
-						Cookies.set("admin_token", data.token);
-						Cookies.set("admin_email", email);
-					} else {
-						Cookies.set("voter_token", data.token);
-						Cookies.set("email", email);
-					}
-					window.location.href = isAdmin
-						? "/admin/dashboard"
-						: "/voter/dashboard";
-				} else {
-					setErrorMessage(
-						"Error: " +
-							(Array.isArray(data.error)
-								? data.error.join(", ")
-								: data.error)
-					);
-					window.HSOverlay.open("#errorPopupModal");
-				}
+		setEmailError(!emailIsValid);
+		setPasswordError(!passwordIsValid);
+
+		if (emailIsValid && passwordIsValid) {
+			const data = { email, password };
+			const url = isAdmin
+				? "http://localhost:3001/admin/login"
+				: "http://localhost:3001/voter/login";
+
+			fetch(url, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: isAdmin
+						? `Bearer ${Cookies.get("admin_token")}`
+						: `Bearer ${Cookies.get("voter_token")}`,
+				},
+				body: JSON.stringify(data),
 			})
-			.catch((error) => {
-				setErrorMessage(error.toString());
-				window.HSOverlay.open("#errorPopupModal");
-			});
+				.then((response) => response.json())
+				.then((data) => {
+					if (Object.prototype.hasOwnProperty.call(data, "token")) {
+						if (isAdmin) {
+							Cookies.set("admin_token", data.token);
+							Cookies.set("admin_email", email);
+						} else {
+							Cookies.set("voter_token", data.token);
+							Cookies.set("email", email);
+						}
+						window.location.href = isAdmin
+							? "/admin/dashboard"
+							: "/voter/dashboard";
+					} else {
+						setErrorMessage(
+							"Error: " +
+								(Array.isArray(data.error)
+									? data.error.join(", ")
+									: data.error)
+						);
+						window.HSOverlay.open("#errorPopupModal");
+					}
+				})
+				.catch((error) => {
+					setErrorMessage(error.toString());
+					window.HSOverlay.open("#errorPopupModal");
+				});
+		}
 	};
 
 	return (
@@ -101,11 +116,19 @@ export default function Login({ isAdmin = false }) {
 												type="email"
 												id="email"
 												name="email"
-												className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"
+												style={
+													emailError
+														? {
+																border: "1px solid red",
+														  }
+														: {}
+												}
+												className="py-3 px-4 block w-full rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"
 												value={email}
 												onChange={(e) =>
 													setEmail(e.target.value)
 												}
+												pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 												required
 												aria-describedby="email-error"
 											/>
@@ -123,11 +146,16 @@ export default function Login({ isAdmin = false }) {
 											</div>
 										</div>
 										<p
-											className="hidden text-xs text-red-600 mt-2"
 											id="email-error"
+											className={classNames(
+												"text-xs text-red-600 mt-2",
+												{
+													block: emailError,
+													hidden: !emailError,
+												}
+											)}
 										>
-											Please include a valid email address
-											so we can get back to you
+											Please provide a valid email adress.
 										</p>
 									</div>
 									{/* End Form Group */}
@@ -146,7 +174,14 @@ export default function Login({ isAdmin = false }) {
 												type="password"
 												id="password"
 												name="password"
-												className="py-3 px-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:border-gray-700 dark:text-gray-400 dark:focus:ring-gray-600"
+												className="py-3 px-4 block w-full rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-slate-900 dark:text-gray-400 dark:focus:ring-gray-600"
+												style={
+													passwordError
+														? {
+																border: "1px solid red",
+														  }
+														: {}
+												}
 												onChange={(e) =>
 													setPassword(e.target.value)
 												}
@@ -168,10 +203,16 @@ export default function Login({ isAdmin = false }) {
 											</div>
 										</div>
 										<p
-											className="hidden text-xs text-red-600 mt-2"
+											className={classNames(
+												"text-xs text-red-600 mt-2",
+												{
+													block: passwordError,
+													hidden: !passwordError,
+												}
+											)}
 											id="password-error"
 										>
-											8+ characters required
+											Please provide a password.
 										</p>
 									</div>
 									{/* End Form Group */}

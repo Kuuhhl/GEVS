@@ -46,7 +46,7 @@ class VotersController < ApplicationController
   end
 
   def view_vote
-    if @voter.id == params[:id].to_i
+    if @voter
       if @voter.candidate_id.nil?
         render json: { error: "No vote casted" }, status: :not_found
       else
@@ -77,20 +77,24 @@ class VotersController < ApplicationController
   end
 
   def submit_vote
-    if @voter.id == params[:id].to_i
-      if @voter.candidate_id.nil?
-        candidate = Candidate.find_by(id: params[:candidate_id])
-        if candidate.present?
-          @voter.submit_vote(candidate.id)
-          render json: { message: "Vote casted successfully" }, status: :ok
-        else
-          render json: { error: "Candidate does not exist" }, status: :not_found
-        end
+    election = Election.last
+    unless election.status == "Pending"
+      render json: { error: "Election is not currently running" }, status: :bad_request
+      return
+    end
+
+    if @voter.candidate_id.nil?
+      candidate = Candidate.find_by(id: params[:candidate_id])
+      if candidate.present?
+        puts "Voter candidate id attribute before: " + @voter.candidate_id.to_s
+        @voter.submit_vote(candidate.id)
+        puts "Voter candidate id attribute after: " + @voter.candidate_id.to_s
+        render json: { message: "Vote casted successfully" }, status: :ok
       else
-        render json: { error: "Vote already casted" }, status: :bad_request
+        render json: { error: "Candidate does not exist" }, status: :not_found
       end
     else
-      render json: { error: "Unauthorized" }, status: :unauthorized
+      render json: { error: "Vote already casted" }, status: :bad_request
     end
   end
 
@@ -106,7 +110,7 @@ class VotersController < ApplicationController
 
     begin
       decoded = JsonWebToken.decode(token)
-      voter = Voter.find(decoded[:user_id])
+      @voter = Voter.find(decoded[:user_id])
     rescue ActiveRecord::RecordNotFound
       render json: { error: "Invalid token" }, status: :unauthorized
     end

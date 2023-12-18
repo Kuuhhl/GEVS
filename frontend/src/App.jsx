@@ -14,12 +14,13 @@ function App() {
 			<Route path="/admin" element={<Dashboard isAdmin={true} />} />
 			<Route
 				path="/admin/dashboard"
-				element={<Dashboard isAdmin={true} />}
+				element={<Dashboard isAdmin={true} isVoter={false} />}
 			/>
 			<Route
 				path="/voter/dashboard"
-				element={<Dashboard isAdmin={false} />}
+				element={<Dashboard isAdmin={false} isVoter={true} />}
 			/>
+			<Route path="/dashboard" element={<Dashboard />} />
 			<Route path="/vote" element={<Vote />} />
 		</Routes>
 	);

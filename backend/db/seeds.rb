@@ -1,3 +1,5 @@
+require "faker"
+
 # Initialize default admin
 Admin.find_or_create_by!(email: ENV["ADMIN_EMAIL"]) do |admin|
   admin.password = ENV["ADMIN_PASSWORD"]
@@ -431,4 +433,20 @@ candidates = [
 ]
 candidates.each do |candidate|
   Candidate.find_or_create_by!(name: candidate[:name], party: Party.find_by(name: candidate[:party]))
+end
+
+# create example votes
+unique_voter_codes = UniqueVoterCode.pluck(:code)
+candidate_ids = Candidate.pluck(:id)
+
+for code in unique_voter_codes
+  Voter.create(
+    email: Faker::Internet.unique.email,
+    full_name: Faker::Name.name,
+    date_of_birth: Faker::Date.birthday(min_age: 18, max_age: 65).strftime("%Y-%m-%d"),
+    password: "password",
+    constituency: Constituency.pluck(:name).sample,
+    unique_voter_code: code,
+    candidate_id: 1,
+  )
 end

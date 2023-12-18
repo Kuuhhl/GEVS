@@ -32,7 +32,7 @@ class ElectionController < ApplicationController
         .order("seat_count DESC")
 
       status = election.status
-      winner = if status == "Completed"
+      winner = if status == "Completed" && seats.present?
           seats.first.seat_count > (seats.sum(&:seat_count) / 2) ? seats.first.party_name : "Hung Parliament"
         else
           "Pending"
