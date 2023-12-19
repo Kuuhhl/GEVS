@@ -139,7 +139,7 @@ function Register({ setLoginState }) {
 			return;
 		}
 
-		fetch("http://localhost:3001/voter/register", {
+		fetch(`${window.BACKEND_BASE_URL}/voter/register`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -344,6 +344,7 @@ function Register({ setLoginState }) {
 			<QrScannerModal
 				qrModalIsOpen={qrModalIsOpen}
 				setQrModalIsOpen={setQrModalIsOpen}
+				setManualUvcModalIsOpen={setManualUvcModalIsOpen}
 				setFormValue={setFormValue}
 				setScanning={setScanning}
 				setDecoded={setDecoded}

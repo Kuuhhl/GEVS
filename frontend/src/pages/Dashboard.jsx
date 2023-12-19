@@ -43,7 +43,7 @@ export default function Dashboard({ loginState }) {
 	useEffect(() => {
 		const getVoteInfo = async () => {
 			const response = await fetch(
-				"http://localhost:3001/voter/view_vote",
+				`${window.BACKEND_BASE_URL}/voter/view_vote`,
 				{
 					method: "GET",
 					headers: {
@@ -80,19 +80,25 @@ export default function Dashboard({ loginState }) {
 		[adminToken]
 	);
 	const startElection = useCallback(() => {
-		handleElection("http://localhost:3001/admin/action/election/start");
+		handleElection(
+			`${window.BACKEND_BASE_URL}/admin/action/election/start`
+		);
 	}, [handleElection]);
 	const endElection = useCallback(() => {
-		handleElection("http://localhost:3001/admin/action/election/end");
+		handleElection(`${window.BACKEND_BASE_URL}/admin/action/election/end`);
 	}, [handleElection]);
 
 	const resetElection = useCallback(() => {
-		handleElection("http://localhost:3001/admin/action/election/reset");
+		handleElection(
+			`${window.BACKEND_BASE_URL}/admin/action/election/reset`
+		);
 	}, [handleElection]);
 
 	useEffect(() => {
 		const getElectionInfo = async () => {
-			const response = await fetch("http://localhost:3001/gevs/results");
+			const response = await fetch(
+				`${window.BACKEND_BASE_URL}/gevs/results`
+			);
 			const data = await response.json();
 
 			if (!response.ok) {

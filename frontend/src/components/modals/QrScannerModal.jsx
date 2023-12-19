@@ -4,6 +4,7 @@ import { QrScanner } from "@yudiel/react-qr-scanner";
 export default function QrScannerModal({
 	qrModalIsOpen,
 	setQrModalIsOpen,
+	setManualUvcModalIsOpen,
 	setFormValue,
 	setScanning,
 	setDecoded,
@@ -82,7 +83,7 @@ export default function QrScannerModal({
 							);
 							setScanning(false);
 							setQrScannerLoaded(false);
-							window.HSOverlay.open("#manualUvcModal");
+							setManualUvcModalIsOpen(true);
 						}}
 						containerStyle={
 							qrScannerLoaded ? {} : { display: "none" }
@@ -131,6 +132,7 @@ export default function QrScannerModal({
 QrScannerModal.propTypes = {
 	qrModalIsOpen: PropTypes.bool.isRequired,
 	setQrModalIsOpen: PropTypes.func.isRequired,
+	setManualUvcModalIsOpen: PropTypes.func.isRequired,
 	setFormValue: PropTypes.func.isRequired,
 	setScanning: PropTypes.func.isRequired,
 	setDecoded: PropTypes.func.isRequired,

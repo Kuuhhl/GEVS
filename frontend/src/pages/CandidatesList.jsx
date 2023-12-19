@@ -22,7 +22,7 @@ export default function CandidatesList({ vote = false }) {
 			return;
 		}
 
-		fetch("http://localhost:3001/voter/verify-token", {
+		fetch(`${window.BACKEND_BASE_URL}/voter/verify-token`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -44,7 +44,7 @@ export default function CandidatesList({ vote = false }) {
 
 	// fetch candidates from server
 	useEffect(() => {
-		fetch("http://localhost:3001/gevs/candidates", {
+		fetch(`${window.BACKEND_BASE_URL}/gevs/candidates`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -61,7 +61,7 @@ export default function CandidatesList({ vote = false }) {
 
 	useEffect(() => {
 		if (authenticated && votedCandidate.id) {
-			fetch("http://localhost:3001/voter/vote", {
+			fetch(`${window.BACKEND_BASE_URL}/voter/vote`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",

@@ -88,7 +88,7 @@ export default function Header({ loginState, setLoginState }) {
 						</Link>
 						<Link
 							className={classNames(
-								"font-medium hover:text-gray-400 dark:hover:text-blue-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600",
+								"font-medium hover:text-gray-400 dark:hover:text-blue-500 ",
 								{
 									"text-gray-500":
 										location.pathname !== "/candidates",
@@ -102,7 +102,7 @@ export default function Header({ loginState, setLoginState }) {
 						</Link>
 						{loginState.voter && (
 							<button
-								className="font-medium text-red-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								className="font-medium text-red-500"
 								onClick={() => handleLogout("voter")}
 							>
 								Logout
@@ -110,7 +110,7 @@ export default function Header({ loginState, setLoginState }) {
 						)}
 						{loginState.admin && (
 							<button
-								className="font-medium text-red-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								className="font-medium text-red-500"
 								onClick={() => handleLogout("admin")}
 							>
 								Logout
@@ -118,7 +118,15 @@ export default function Header({ loginState, setLoginState }) {
 						)}
 						{!loginState.admin && !loginState.voter && (
 							<Link
-								className="font-medium text-gray-600 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-500 dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								className={classNames(
+									("font-medium hover:text-gray-400 dark:hover:text-blue-500",
+									{
+										"text-gray-500":
+											location.pathname !== "/login",
+										"text-blue-500":
+											location.pathname === "/login",
+									})
+								)}
 								to={"/login"}
 							>
 								Login
