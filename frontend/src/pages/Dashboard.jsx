@@ -79,16 +79,16 @@ export default function Dashboard({ loginState }) {
 		},
 		[adminToken]
 	);
-	const startElection = () => {
+	const startElection = useCallback(() => {
 		handleElection("http://localhost:3001/admin/action/election/start");
-	};
-	const endElection = () => {
+	}, [handleElection]);
+	const endElection = useCallback(() => {
 		handleElection("http://localhost:3001/admin/action/election/end");
-	};
+	}, [handleElection]);
 
-	const resetElection = () => {
+	const resetElection = useCallback(() => {
 		handleElection("http://localhost:3001/admin/action/election/reset");
-	};
+	}, [handleElection]);
 
 	useEffect(() => {
 		const getElectionInfo = async () => {
@@ -108,7 +108,6 @@ export default function Dashboard({ loginState }) {
 		getElectionInfo();
 	}, [electionStatus]);
 
-	// Define buttonsConfig at the top level of your component
 	const buttonsConfig = useMemo(
 		() => [
 			{
@@ -136,17 +135,22 @@ export default function Dashboard({ loginState }) {
 				isLink: true,
 			},
 		],
-		[electionStatus, loginState.admin, loginState.voter, yourVote]
-	); // Add dependencies here
+		[
+			electionStatus,
+			loginState.admin,
+			loginState.voter,
+			yourVote,
+			endElection,
+			startElection,
+			resetElection,
+		]
+	);
 
-	// Move useEffect to the top level of your component
 	useEffect(() => {
-		// Check if any buttons should be shown
 		const areButtonsShown = buttonsConfig.some(
 			(button) => button.condition
 		);
 
-		// Set the state
 		setButtonsShown(areButtonsShown);
 	}, [buttonsConfig]);
 

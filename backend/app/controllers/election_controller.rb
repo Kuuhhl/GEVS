@@ -4,9 +4,9 @@ class ElectionController < ApplicationController
 
     election = Election.last
     if election.present? && election.status == "Pending" || election.status == "Completed"
-      if Constituency.exists?(name: constituency_name)
+      if Constituency.where("name LIKE ?", constituency_name).exists?
         votes = Candidate.joins(:party, :voters)
-          .where(voters: { constituency: constituency_name })
+          .where("voters.constituency LIKE ?", constituency_name)
           .select("candidates.name AS candidate_name", "parties.name AS party_name", "COUNT(voters.id) AS vote_count")
           .group("candidates.id", "parties.id")
           .order("vote_count DESC")
@@ -33,7 +33,7 @@ class ElectionController < ApplicationController
 
       status = election.status
       winner = if seats.empty? && status == "Completed"
-          "No votes cast - No winner"
+          "Hung Parliament"
         elsif status == "Completed"
           seats.first.seat_count > (seats.sum(&:seat_count) / 2) ? seats.first.party_name : "Hung Parliament"
         else
