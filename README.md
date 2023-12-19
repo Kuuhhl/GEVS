@@ -11,6 +11,53 @@
   <p align="center">An Election System for the fictional valley of Shangri-la.</p>
 </p>
 
+## Prerequisites
+
+Before you begin, ensure you have met the following requirements:
+
+* You have installed [Docker](https://www.docker.com/products/docker-desktop) and [Docker-Compose](https://docs.docker.com/compose/install/).
+
+## Running the Project
+
+Follow these steps to get your application running:
+
+1. **Clone the repository**
+
+  Use the following command to clone this repository:
+
+  ```bash
+  git clone https://www.github.com/kuuhhl/GEVS
+  ```
+
+2. **Navigate to the project directory**
+
+  Change your current working directory to the project's directory:
+
+  ```bash
+  cd GEVS
+  ```
+
+3. **Build the project**
+
+  Use Docker Compose to build the project:
+
+  ```bash
+  docker-compose build
+  ```
+
+4. **Run the project**
+
+  Start the project in detached mode with Docker Compose:
+
+  ```bash
+  docker-compose up -d
+  ```
+
+After following these steps, you should be able to access the application:
+
+* The Frontend should be available at [http://localhost:8080](http://localhost:8080).
+* The Backend should be available at [http://localhost:3000](http://localhost:3000).
+
 
 ## Contributors
 
