@@ -26,9 +26,12 @@ class Voter < User
   end
 
   def voter_code_valid_and_unique
-    if UniqueVoterCode.exists?(code: unique_voter_code) && Voter.where.not(id: id).exists?(unique_voter_code: unique_voter_code)
-      puts "Voter code already exists"
-      errors.add(:unique_voter_code, "is not valid or has already been assigned")
+    unless UniqueVoterCode.exists?(code: unique_voter_code)
+      errors.add(:unique_voter_code, "does not exist")
+    end
+
+    if Voter.where.not(id: id).exists?(unique_voter_code: unique_voter_code)
+      errors.add(:unique_voter_code, "has already been used")
     end
   end
 
