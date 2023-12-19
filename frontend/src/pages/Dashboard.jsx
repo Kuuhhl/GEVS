@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import colors from "css-color-names";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Chart, CategoryScale, LinearScale, BarElement } from "chart.js";
@@ -178,6 +179,15 @@ export default function Dashboard({ loginState }) {
 		);
 	};
 
+	const getColorForParty = (partyName) => {
+		const lowerCasePartyName = partyName.toLowerCase();
+
+		const colorName = Object.keys(colors).find((color) =>
+			lowerCasePartyName.includes(color.toLowerCase())
+		);
+
+		return colorName ? colors[colorName] : getRandomColor();
+	};
 	return (
 		<div className="px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-700 rounded-md flex flex-col gap-4 p-4 text-center">
 			{(loginState.voter || loginState.admin) && (
@@ -260,13 +270,11 @@ export default function Dashboard({ loginState }) {
 								{
 									label: "# of Votes",
 									data: seats.map((seat) => seat.seat),
-									backgroundColor: seats.map(() =>
-										getRandomColor()
+									backgroundColor: seats.map((seat) =>
+										getColorForParty(seat.party)
 									),
-									borderColor: seats.map(() =>
-										getRandomColor()
-									),
-									borderWidth: 1,
+									borderColor: "black",
+									borderWidth: 0,
 								},
 							],
 						}}

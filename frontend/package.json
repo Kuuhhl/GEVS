@@ -16,6 +16,7 @@
     "@yudiel/react-qr-scanner": "^1.2.3",
     "chart.js": "^4.4.0",
     "classnames": "^2.3.2",
+    "css-color-names": "^1.0.1",
     "js-cookie": "^3.0.5",
     "preline": "^2.0.0",
     "react": "^18.2.0",
