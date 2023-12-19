@@ -76,7 +76,7 @@ class AdminController < ApplicationController
       @decoded = JsonWebToken.decode(token)
       @current_user = Admin.find(@decoded[:user_id])
     rescue JWT::DecodeError
-      render json: { error: "Invalid token" }, status: :unauthorized
+      render json: { error: "Invalid token." }, status: :unauthorized
     end
   end
 end

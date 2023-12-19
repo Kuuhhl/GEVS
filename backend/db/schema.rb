@@ -20,7 +20,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_163831) do
 
   create_table "candidates", force: :cascade do |t|
     t.string "name"
-    t.integer "party_id", null: false
+    t.bigint "party_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["party_id"], name: "index_candidates_on_party_id"
@@ -57,7 +57,7 @@ ActiveRecord::Schema[7.1].define(version: 2023_11_30_163831) do
     t.string "password_digest"
     t.string "constituency", null: false
     t.string "unique_voter_code", null: false
-    t.integer "candidate_id"
+    t.bigint "candidate_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["candidate_id"], name: "index_voters_on_candidate_id"

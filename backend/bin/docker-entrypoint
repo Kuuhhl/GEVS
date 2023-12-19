@@ -1,8 +1,33 @@
 #!/bin/bash -e
 
-# If running the rails server then create or migrate existing database
-if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
-  ./bin/rails db:prepare
+# Check if all environment variables are set
+if [ -z "${DATABASE_USER}" ]; then
+  echo "DATABASE_USER is not set"
+  exit 1
 fi
+if [ -z "${DATABASE_PASSWORD}" ]; then
+  echo "DATABASE_PASSWORD is not set"
+  exit 1
+fi
+if [ -z "${DATABASE_HOST}" ]; then
+  echo "DATABASE_HOST is not set"
+  exit 1
+fi
+if [ -z "${DATABASE_PORT}" ]; then
+  echo "DATABASE_PORT is not set"
+  exit 1
+fi
+if [ -z "${RAILS_FORCE_SSL}" ]; then
+  echo "RAILS_FORCE_SSL is not set"
+  exit 1
+fi
+
+# Generate a new Rails secret
+if [ -z "${SECRET_KEY_BASE}" ]; then
+  export SECRET_KEY_BASE=$(bundle exec rails secret)
+fi
+
+# create or migrate existing database
+./bin/rails db:prepare
 
 exec "${@}"
