@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Chart, CategoryScale, LinearScale, BarElement } from "chart.js";
 import classNames from "classnames";
@@ -12,6 +12,8 @@ export default function Dashboard({ loginState }) {
 	const [electionWinner, setElectionWinner] = useState("");
 	const [yourVote, setYourVote] = useState("");
 	const [seats, setSeats] = useState([]);
+
+	const [buttonsShown, setButtonsShown] = useState(false);
 
 	const voterToken = Cookies.get("voter_token");
 	const adminToken = Cookies.get("admin_token");
@@ -32,7 +34,7 @@ export default function Dashboard({ loginState }) {
 			navigate("/admin/login");
 		} else if (loginState.voter && !voterToken) {
 			navigate("/login");
-		} else if (loginState.admin && electionStatus === "Not Started") {
+		} else if (!loginState.admin && electionStatus === "Not Started") {
 			navigate("/admin/login");
 		}
 	}, [navigate, voterToken, adminToken, electionStatus, loginState]);
@@ -105,8 +107,9 @@ export default function Dashboard({ loginState }) {
 		getElectionInfo();
 	}, [electionStatus]);
 
-	const renderAdminButtons = () => {
-		const buttonsConfig = [
+	// Define buttonsConfig at the top level of your component
+	const buttonsConfig = useMemo(
+		() => [
 			{
 				label: "End Election",
 				action: endElection,
@@ -122,13 +125,44 @@ export default function Dashboard({ loginState }) {
 				action: resetElection,
 				condition: loginState.admin && electionStatus === "Completed",
 			},
-		];
+			{
+				label: "Vote Now",
+				action: "/vote",
+				condition:
+					electionStatus === "Pending" &&
+					((!loginState.voter && !loginState.admin) ||
+						yourVote === "Not Voted"),
+				isLink: true,
+			},
+		],
+		[electionStatus, loginState.admin, loginState.voter, yourVote]
+	); // Add dependencies here
 
+	// Move useEffect to the top level of your component
+	useEffect(() => {
+		// Check if any buttons should be shown
+		const areButtonsShown = buttonsConfig.some(
+			(button) => button.condition
+		);
+
+		// Set the state
+		setButtonsShown(areButtonsShown);
+	}, [buttonsConfig]);
+
+	const renderButtons = () => {
 		return (
-			<>
-				{buttonsConfig.map(
-					(button, index) =>
-						button.condition && (
+			<div className="flex flex-col gap-1">
+				{buttonsConfig.map((button, index) =>
+					button.condition ? (
+						button.isLink ? (
+							<Link
+								className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
+								key={index}
+								to={button.action}
+							>
+								{button.label}
+							</Link>
+						) : (
 							<button
 								className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
 								type="button"
@@ -138,150 +172,155 @@ export default function Dashboard({ loginState }) {
 								{button.label}
 							</button>
 						)
+					) : null
 				)}
-			</>
+			</div>
 		);
 	};
 
 	return (
-		<div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800">
-			<div className="max-w-[100rem] mx-auto px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-700 rounded-md flex flex-col gap-4 p-4 text-center">
-				{(loginState.voter || loginState.admin) && (
-					<h2 className="text-center text-xl font-medium text-gray-900 dark:text-white">
-						{loginState.admin ? "Admin Mode" : "Voter Mode"}
-					</h2>
+		<div className="px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-700 rounded-md flex flex-col gap-4 p-4 text-center">
+			{(loginState.voter || loginState.admin) && (
+				<h2 className="text-center text-xl font-medium text-gray-900 dark:text-white">
+					{loginState.admin ? "Admin Mode" : "Voter Mode"}
+				</h2>
+			)}
+			<h1 className="block text-3xl font-bold text-gray-800 sm:text-4xl md:text-5xl lg:text-6xl dark:text-white">
+				{electionStatus !== "Completed"
+					? "Election Dashboard"
+					: "Election Results"}
+			</h1>{" "}
+			<div
+				className={classNames(
+					"flex flex-col sm:flex-row items-center gap-4",
+					{
+						"justify-evenly": buttonsShown,
+						"justify-center": !buttonsShown,
+						"text-start": buttonsShown,
+						"text-center": !buttonsShown,
+					}
 				)}
-				<h1 className="block text-3xl font-bold text-gray-800 sm:text-4xl md:text-5xl lg:text-6xl dark:text-white">
-					{electionStatus !== "Completed"
-						? "Election Dashboard"
-						: "Election Results"}
-				</h1>{" "}
-				<div className="flex justify-evenly items-center">
-					{/* Info Strings */}
-					<div className="flex flex-col gap-1">
+			>
+				{/* Info Strings */}
+				<div
+					className={classNames("flex flex-col gap-1 items-center", {
+						"sm:justify-center": !buttonsShown,
+						"sm:justify-start": buttonsShown,
+					})}
+				>
+					<div className="text-lg text-gray-800 dark:text-gray-400 flex gap-1">
+						Status:
+						<p
+							className={classNames("text-lg", {
+								"text-red-800 dark:text-red-400":
+									electionStatus === "Not Started",
+								"text-yellow-800 dark:text-yellow-400":
+									electionStatus === "Pending",
+								"text-green-800 dark:text-green-400":
+									electionStatus !== "Not Started" &&
+									electionStatus !== "Pending",
+							})}
+						>
+							{electionStatus}
+						</p>
+					</div>
+
+					{loginState.voter && yourVote && (
 						<div className="text-lg text-gray-800 dark:text-gray-400 flex gap-1">
-							Status:
+							Your Vote:
+							<p className="text-lg">{yourVote}</p>
+						</div>
+					)}
+
+					{electionStatus !== "Not Started" && (
+						<div className="text-lg text-gray-800 dark:text-gray-400 flex gap-1">
+							Winner:
 							<p
 								className={classNames("text-lg", {
-									"text-red-800 dark:text-red-400":
-										electionStatus === "Not Started",
-									"text-yellow-800 dark:text-yellow-400":
-										electionStatus === "Pending",
 									"text-green-800 dark:text-green-400":
-										electionStatus !== "Not Started" &&
-										electionStatus !== "Pending",
+										electionWinner !== "Pending",
+									"text-yellow-800 dark:text-yellow-400":
+										electionWinner === "Pending",
 								})}
 							>
-								{electionStatus}
+								{electionWinner}
 							</p>
 						</div>
-
-						{loginState.voter && yourVote && (
-							<div className="text-lg text-gray-800 dark:text-gray-400 flex gap-1">
-								Your Vote:
-								<p className="text-lg">{yourVote}</p>
-							</div>
-						)}
-
-						{electionStatus !== "Not Started" && (
-							<div className="text-lg text-gray-800 dark:text-gray-400 flex gap-1">
-								Winner:
-								<p
-									className={classNames("text-lg", {
-										"text-green-800 dark:text-green-400":
-											electionWinner !== "Pending",
-										"text-yellow-800 dark:text-yellow-400":
-											electionWinner === "Pending",
-									})}
-								>
-									{electionWinner}
-								</p>
-							</div>
-						)}
-					</div>
-					{/* Buttons */}
-					<div className="flex flex-col gap-1">
-						{loginState.admin && renderAdminButtons()}
-
-						{electionStatus === "Pending" &&
-							((!loginState.voter && !loginState.admin) ||
-								yourVote === "Not Voted") && (
-								<Link
-									className="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none dark:focus:outline-none dark:focus:ring-1 dark:focus:ring-gray-600"
-									type="button"
-									to="/vote"
-								>
-									Vote Now
-								</Link>
-							)}
-					</div>
+					)}
 				</div>
-				<div>
-					{electionStatus !== "Not Started" && seats && (
-						<Bar
-							data={{
-								labels: seats.map((seat) => seat.party),
-								datasets: [
-									{
-										label: "# of Votes",
-										data: seats.map((seat) => seat.seat),
-										backgroundColor: seats.map(() =>
-											getRandomColor()
-										),
-										borderColor: seats.map(() =>
-											getRandomColor()
-										),
-										borderWidth: 1,
-									},
-								],
-							}}
-							options={{
-								indexAxis: "y",
-								elements: {
-									bar: {
-										borderWidth: 2,
-									},
+				{/* Buttons */}
+				{renderButtons()}
+			</div>
+			<div>
+				{electionStatus !== "Not Started" && seats && (
+					<Bar
+						data={{
+							labels: seats.map((seat) => seat.party),
+							datasets: [
+								{
+									label: "# of Votes",
+									data: seats.map((seat) => seat.seat),
+									backgroundColor: seats.map(() =>
+										getRandomColor()
+									),
+									borderColor: seats.map(() =>
+										getRandomColor()
+									),
+									borderWidth: 1,
 								},
-								responsive: true,
-								plugins: {
-									legend: {
-										position: "right",
-										labels: {
-											color: "rgba(255,255,255,0.8)",
-										},
-									},
-									title: {
-										display: true,
-										text: "Vote distribution",
+							],
+						}}
+						options={{
+							indexAxis: "y",
+							elements: {
+								bar: {
+									borderWidth: 2,
+								},
+							},
+							responsive: true,
+							plugins: {
+								legend: {
+									position: "right",
+									labels: {
 										color: "rgba(255,255,255,0.8)",
 									},
 								},
-								scales: {
-									y: {
-										title: {
-											display: true,
-											text: "Party",
-											color: "rgba(255,255,255,0.8)",
-										},
-										ticks: {
-											color: "white",
-										},
+								title: {
+									display: true,
+									text: "Vote distribution",
+									color: "rgba(255,255,255,0.8)",
+								},
+							},
+							scales: {
+								y: {
+									title: {
+										display: true,
+										text: "Party",
+										color: "rgba(255,255,255,0.8)",
 									},
-									x: {
-										title: {
-											display: true,
-											text: "Seats",
-											color: "rgba(255,255,255,0.8)",
-										},
-										ticks: {
-											color: "white",
+									ticks: {
+										color: "white",
+									},
+								},
+								x: {
+									title: {
+										display: true,
+										text: "Seats",
+										color: "rgba(255,255,255,0.8)",
+									},
+									ticks: {
+										color: "white",
+										callback: function (value) {
+											if (value % 1 === 0) {
+												return value;
+											}
 										},
 									},
 								},
-							}}
-						/>
-					)}
-				</div>
+							},
+						}}
+					/>
+				)}
 			</div>
 		</div>
 	);

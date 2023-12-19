@@ -1,10 +1,12 @@
 import PropTypes from "prop-types";
 import classNames from "classnames";
+import Cookies from "js-cookie";
 import { Link, useLocation } from "react-router-dom";
 
 export default function Header({ loginState, setLoginState }) {
 	const location = useLocation();
 	const handleLogout = (type) => {
+		Cookies.remove(`${type}_token`);
 		setLoginState((prevState) => ({ ...prevState, [type]: false }));
 	};
 	return (

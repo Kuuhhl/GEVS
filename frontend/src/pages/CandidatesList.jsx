@@ -94,11 +94,11 @@ export default function CandidatesList({ vote = false }) {
 					className="bg-white p-6 rounded-md shadow-md dark:bg-gray-700"
 				>
 					<div>
-						<h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+						<h2 className="text-center text-3xl font-bold text-gray-900 dark:text-white">
 							{party}
 						</h2>
 					</div>
-					<div className="mt-8 space-y-6">
+					<div className="mt-2 space-y-6">
 						<CandidatesTable
 							candidates={candidates}
 							setVotedCandidate={setVotedCandidate}

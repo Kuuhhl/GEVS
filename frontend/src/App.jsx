@@ -15,36 +15,47 @@ function App() {
 	});
 
 	return (
-		<div className="bg-gray-800">
+		<div className="min-h-screen bg-gray-900">
 			<Header loginState={loginState} setLoginState={setLoginState} />
-			<Routes>
-				<Route
-					path="/"
-					element={<Dashboard loginState={loginState} />}
-				/>
-				<Route
-					path="/register"
-					element={<Register setLoginState={setLoginState} />}
-				/>
-				<Route
-					path="/login"
-					element={<Login setLoginState={setLoginState} />}
-				/>
-				<Route
-					path="/admin/login"
-					element={
-						<Login isAdmin={true} setLoginState={setLoginState} />
-					}
-				/>
-				<Route
-					path="/candidates"
-					element={
-						<CandidatesList loginState={loginState} vote={false} />
-					}
-				/>
+			<div className="bg-gray-800  w-full mx-auto p-6 flex items-center justify-center">
+				<Routes>
+					<Route
+						path="/"
+						element={<Dashboard loginState={loginState} />}
+					/>
+					<Route
+						path="/register"
+						element={<Register setLoginState={setLoginState} />}
+					/>
+					<Route
+						path="/login"
+						element={<Login setLoginState={setLoginState} />}
+					/>
+					<Route
+						path="/admin/login"
+						element={
+							<Login
+								isAdmin={true}
+								setLoginState={setLoginState}
+							/>
+						}
+					/>
+					<Route
+						path="/candidates"
+						element={
+							<CandidatesList
+								loginState={loginState}
+								vote={false}
+							/>
+						}
+					/>
 
-				<Route path="/vote" element={<CandidatesList vote={true} />} />
-			</Routes>
+					<Route
+						path="/vote"
+						element={<CandidatesList vote={true} />}
+					/>
+				</Routes>
+			</div>
 			<Footer loginState={loginState} setLoginState={setLoginState} />
 		</div>
 	);
